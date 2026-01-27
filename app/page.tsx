@@ -1,65 +1,73 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useQuery, gql } from '@apollo/client';
+import { Users, Store, ShoppingBag, DollarSign, Activity } from 'lucide-react';
+
+const ADMIN_STATS_QUERY = gql`
+  query AdminStats {
+    listUsers(role: ADMIN) { id } # Just to check connectivity
+    # Real stats would need a specific resolver
+  }
+`;
+
+export default function AdminDashboard() {
+  const { data, loading, error } = useQuery(ADMIN_STATS_QUERY);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Visão Geral da Plataforma</h1>
+        <p className="text-slate-500">Monitoramento em tempo real do ecossistema LupaShop.</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard title="Total de Lojas" value="156" icon={Store} color="bg-blue-500" />
+        <StatCard title="Usuários Ativos" value="2,340" icon={Users} color="bg-emerald-500" />
+        <StatCard title="Pedidos (Mês)" value="45,200" icon={ShoppingBag} color="bg-violet-500" />
+        <StatCard title="Volume Transacionado" value="Kz 12.5M" icon={DollarSign} color="bg-amber-500" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-500" />
+            Atividade Recente
+          </h3>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 text-sm pb-3 border-b border-slate-50 last:border-0 last:pb-0">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="font-medium">Nova loja registrada:</span>
+                <span className="text-slate-500">Tech Zone {i}</span>
+                <span className="ml-auto text-xs text-slate-400">Há {i * 5} min</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-lg mb-4">Lojas Pendentes de Aprovação</h3>
+          <div className="text-slate-500 text-center py-8">
+            <Store className="w-12 h-12 mx-auto text-slate-300 mb-2" />
+            <p>Nenhuma loja pendente no momento.</p>
+          </div>
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon: Icon, color }: any) {
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+      </div>
+      <div className={`p-3 rounded-lg ${color} bg-opacity-10`}>
+        <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
+      </div>
     </div>
   );
 }
