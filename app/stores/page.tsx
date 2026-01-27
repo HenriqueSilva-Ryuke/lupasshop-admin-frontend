@@ -1,41 +1,63 @@
 'use client';
 
 import { useQuery, useMutation, gql } from '@apollo/client';
-import { CheckCircle, XCircle, Search, Store } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Store, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
-const LIST_PENDING_STORES = gql`
-  query ListPendingStores {
-    listStores(isVerified: false, limit: 20) {
+const GET_PENDING_STORES = gql`
+    query GetPendingStores {
+        getPendingStores(limit: 50) {
       id
       name
       description
       createdAt
-      isVerified
+            approvalStatus
       ownerId
+            location
     }
   }
 `;
 
-const UPDATE_STORE_STATUS = gql`
-  mutation UpdateStoreStatus($id: ID!, $input: UpdateStoreInput!) {
-    updateStore(id: $id, input: $input) {
+const APPROVE_STORE = gql`
+    mutation ApproveStore($id: ID!, $input: ApproveStoreInput) {
+        approveStore(id: $id, input: $input) {
       id
-      isVerified
+            approvalStatus
+            approvedAt
+        }
+    }
+`;
+
+const REJECT_STORE = gql`
+    mutation RejectStore($id: ID!, $input: RejectStoreInput!) {
+        rejectStore(id: $id, input: $input) {
+            id
+            approvalStatus
+            rejectedAt
     }
   }
 `;
 
 export default function StoresPage() {
-    const { data, loading, error, refetch } = useQuery(LIST_PENDING_STORES);
-    const [updateStore] = useMutation(UPDATE_STORE_STATUS);
+        const [approvalNotes, setApprovalNotes] = useState('');
+        const [selectedStore, setSelectedStore] = useState<string | null>(null);
+    
+        const { data, loading, error, refetch } = useQuery(GET_PENDING_STORES);
+        const [approveStore] = useMutation(APPROVE_STORE);
+        const [rejectStore] = useMutation(REJECT_STORE);
 
     const handleApprove = async (id: string) => {
         try {
-            await updateStore({
-                variables: { id, input: { isVerified: true } }
+                        await approveStore({
+                                variables: { 
+                                    id, 
+                                    input: approvalNotes ? { approvalNotes } : undefined 
+                                }
             });
             toast.success('Loja aprovada com sucesso!');
+                        setSelectedStore(null);
+                        setApprovalNotes('');
             refetch();
         } catch (err) {
             toast.error('Erro ao aprovar loja');
@@ -43,11 +65,18 @@ export default function StoresPage() {
     };
 
     const handleReject = async (id: string) => {
-        // Rejection logic usually involves status change or deletion. 
-        // For MVP, we might verify=false (no-op) or strictly delete?
-        // Let's assume we just leave it for now or implement a "REJECTED" status if enum supported it.
-        // Since isVerified is boolean, false is pending.
-        // We'll skip reject for now or maybe delete?
+                if (!approvalNotes) {
+                    toast.error('Notas de rejeição são obrigatórias');
+                    return;
+                }
+        
+                try {
+                        await rejectStore({
+                                variables: { id, input: { approvalNotes } }
+                        });
+                        toast.success('Loja rejeitada');
+                        setSelectedStore(null);
+                        setApprovalNotes('');
         if (confirm('Deseja rejeitar e excluir esta solicitação?')) {
             // Verify deletion mutation existence? 
             // Skipping for safety in this iteration.
