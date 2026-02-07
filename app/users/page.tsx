@@ -1,147 +1,182 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { Search, Ban, Shield, Trash2 } from 'lucide-react';
+import { useQuery, gql } from '@apollo/client';
+import { Search, Shield, UserCog, Users as UsersIcon, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
+import {
+  PageHeader,
+  Card,
+  CardContent,
+  Badge,
+  Button,
+  EmptyState,
+  Avatar,
+  StatCard,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@lupa/design-system';
+import { cn, formatDate } from '@lupa/design-system/utils';
 
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: 'BUYER' | 'SELLER' | 'ADMIN';
-  createdAt: string;
-}
+const LIST_USERS = gql`
+  query ListUsers($role: UserRole, $limit: Int, $offset: Int) {
+    listUsers(role: $role, limit: $limit, offset: $offset) {
+      id
+      email
+      fullName
+      role
+      createdAt
+    }
+  }
+`;
+
+const roleBadgeMap: Record<string, { variant: any; label: string }> = {
+  BUYER: { variant: 'info', label: 'Comprador' },
+  SELLER: { variant: 'success', label: 'Vendedor' },
+  ADMIN: { variant: 'warning', label: 'Administrador' },
+};
 
 export default function AdminUsersPage() {
-  const t = useTranslations('admin.users');
-  const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
-    // Call GraphQL mutation
-    console.log('Changing role:', userId, newRole);
-  };
+  const { data, loading } = useQuery(LIST_USERS, {
+    variables: {
+      role: roleFilter || undefined,
+      limit: 50,
+      offset: 0,
+    },
+    errorPolicy: 'ignore',
+  });
 
-  const handleBanUser = async (userId: string) => {
-    if (confirm('Tem certeza que deseja banir este usuário?')) {
-      // Call GraphQL mutation
-      console.log('Banning user:', userId);
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
-      // Call GraphQL mutation
-      setUsers(users.filter((u) => u.id !== userId));
-    }
-  };
+  const users = data?.listUsers || [];
+  const filteredUsers = users.filter(
+    (u: any) =>
+      u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">{t('title')}</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="Gestão de Usuários"
+        description="Visualize e gerencie todos os usuários da plataforma"
+      />
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por email ou nome..."
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Todos os papéis</option>
-            <option value="BUYER">Compradores</option>
-            <option value="SELLER">Vendedores</option>
-            <option value="ADMIN">Administradores</option>
-          </select>
-        </div>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          title="Total de Usuários"
+          value={loading ? '—' : users.length}
+          icon={<UsersIcon className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Vendedores"
+          value={loading ? '—' : users.filter((u: any) => u.role === 'SELLER').length}
+          icon={<ShoppingBag className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Administradores"
+          value={loading ? '—' : users.filter((u: any) => u.role === 'ADMIN').length}
+          icon={<ShieldCheck className="h-5 w-5" />}
+        />
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuário
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('role')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data de Cadastro
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{user.fullName}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      className="px-3 py-1 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="BUYER">Comprador</option>
-                      <option value="SELLER">Vendedor</option>
-                      <option value="ADMIN">Admin</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {new Date(user.createdAt).toLocaleDateString('pt-AO')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleBanUser(user.id)}
-                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg"
-                        title={t('ban')}
-                      >
-                        <Ban className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        title={t('delete')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+      <Card>
+        <CardContent className="p-0">
+          {/* Filters */}
+          <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome ou email..."
+                className="w-full rounded-md border border-input bg-background py-2 pl-10 pr-4 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+              />
+            </div>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+            >
+              <option value="">Todos os papéis</option>
+              <option value="BUYER">Compradores</option>
+              <option value="SELLER">Vendedores</option>
+              <option value="ADMIN">Administradores</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3 p-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {users.length === 0 && (
-          <div className="py-12 text-center text-gray-500">
-            <Shield className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p>Nenhum usuário encontrado</p>
-          </div>
-        )}
-      </div>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <EmptyState
+              icon={<UsersIcon className="h-8 w-8" />}
+              title="Nenhum usuário encontrado"
+              description={search ? 'Tente ajustar os filtros de busca.' : 'Nenhum usuário cadastrado.'}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Papel</TableHead>
+                  <TableHead>Cadastro</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user: any) => {
+                  const roleInfo = roleBadgeMap[user.role] || roleBadgeMap.BUYER;
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            fallback={user.fullName?.[0] || user.email?.[0] || '?'}
+                            size="sm"
+                          />
+                          <span className="font-medium text-foreground">
+                            {user.fullName || 'Sem nome'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={roleInfo.variant}>{roleInfo.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {user.createdAt
+                          ? formatDate(new Date(parseInt(user.createdAt)))
+                          : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" title="Gerenciar">
+                            <UserCog className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Permissões">
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

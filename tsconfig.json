@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@lupa/design-system": ["../packages/design-system/src/index.ts"],
+      "@lupa/design-system/*": ["../packages/design-system/src/*"]
     }
   },
   "include": [
