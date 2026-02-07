@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { Search, Shield, UserCog, Users as UsersIcon, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -43,7 +44,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
 
-  const { data, loading } = useQuery(LIST_USERS, {
+  const { data, loading } = useQuery<any>(LIST_USERS, {
     variables: {
       role: roleFilter || undefined,
       limit: 50,

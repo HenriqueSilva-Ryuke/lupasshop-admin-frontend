@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import {
   Users,
   Store,
@@ -71,7 +72,7 @@ const ADMIN_DASHBOARD_QUERY = gql`
 `;
 
 export default function AdminDashboard() {
-  const { data, loading, error } = useQuery(ADMIN_DASHBOARD_QUERY, {
+  const { data, loading, error } = useQuery<any>(ADMIN_DASHBOARD_QUERY, {
     errorPolicy: 'all',
   });
 

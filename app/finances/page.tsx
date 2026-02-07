@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import {
   DollarSign,
   TrendingUp,
@@ -74,7 +75,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function FinancesPage() {
-  const { data, loading, error } = useQuery(ADMIN_FINANCIAL_QUERY, {
+  const { data, loading, error } = useQuery<any>(ADMIN_FINANCIAL_QUERY, {
     errorPolicy: 'all',
   });
 

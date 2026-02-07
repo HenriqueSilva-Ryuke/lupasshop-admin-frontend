@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, useMutation, gql } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { CheckCircle, XCircle, Search, Store, Eye, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -64,7 +65,7 @@ export default function StoresPage() {
   const [modalAction, setModalAction] = useState<'approve' | 'reject' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data, loading, refetch } = useQuery(GET_PENDING_STORES, {
+  const { data, loading, refetch } = useQuery<any>(GET_PENDING_STORES, {
     errorPolicy: 'ignore',
   });
   const [approveStore, { loading: approving }] = useMutation(APPROVE_STORE);

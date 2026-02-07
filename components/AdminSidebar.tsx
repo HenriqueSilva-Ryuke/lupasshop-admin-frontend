@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Store, Users, DollarSign, Settings, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils'; // May need to copy utils from helper or recreate
 
-// Recreate cn utility since it's a new project
+// Simple cn utility
 function cn(...classes: (string | undefined | null | boolean)[]) {
     return classes.filter(Boolean).join(' ');
 }
