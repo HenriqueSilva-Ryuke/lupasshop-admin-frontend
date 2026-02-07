@@ -21,7 +21,11 @@
     "paths": {
       "@/*": ["./*"],
       "@lupa/design-system": ["../packages/design-system/src/index.ts"],
-      "@lupa/design-system/*": ["../packages/design-system/src/*"]
+      "@lupa/design-system/*": ["../packages/design-system/src/*"],
+      "@lupa/api-client": ["../packages/api-client/src/index.ts"],
+      "@lupa/api-client/*": ["../packages/api-client/src/*"],
+      "@lupa/types": ["../packages/shared-types/src/index.ts"],
+      "@lupa/types/*": ["../packages/shared-types/src/*"]
     }
   },
   "include": [

@@ -22,19 +22,81 @@ import {
   Skeleton,
   EmptyState,
 } from '@lupa/design-system';
+import { formatCurrency } from '@lupa/design-system/utils';
 
+// Real GraphQL queries to the backend
 const ADMIN_DASHBOARD_QUERY = gql`
   query AdminDashboard {
-    listUsers(role: ADMIN) {
+    listStores(limit: 1000) {
       id
+      name
+      slug
+      createdAt
+      isVerified
+      category {
+        name
+      }
+      owner {
+        id
+        fullName
+        email
+      }
+    }
+    listUsers {
+      id
+      role
+    }
+    listOrders(limit: 1000) {
+      orders {
+        id
+        totalAmount
+        status
+        createdAt
+        user {
+          fullName
+        }
+      }
+      total
+    }
+    getFinancialSummary {
+      totalRevenue
+      totalSales
+      averageOrderValue
+    }
+    listReviews {
+      id
+      rating
     }
   }
 `;
 
 export default function AdminDashboard() {
-  const { data, loading } = useQuery(ADMIN_DASHBOARD_QUERY, {
-    errorPolicy: 'ignore',
+  const { data, loading, error } = useQuery(ADMIN_DASHBOARD_QUERY, {
+    errorPolicy: 'all',
   });
+
+  const stores = data?.listStores ?? [];
+  const users = data?.listUsers ?? [];
+  const ordersData = data?.listOrders ?? { orders: [], total: 0 };
+  const financialSummary = data?.getFinancialSummary;
+  const reviews = data?.listReviews ?? [];
+
+  // Compute real metrics
+  const totalStores = stores.length;
+  const totalUsers = users.length;
+  const totalOrders = ordersData.total || ordersData.orders?.length || 0;
+  const totalRevenue = financialSummary?.totalRevenue ?? 0;
+  const avgOrderValue = financialSummary?.averageOrderValue ?? 0;
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : '0';
+  const totalReviews = reviews.length;
+
+  // Pending stores (unverified)
+  const pendingStores = stores.filter((s: { isVerified?: boolean }) => !s.isVerified);
+
+  // Recent activity from orders
+  const recentOrders = (ordersData.orders ?? []).slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -47,31 +109,27 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total de Lojas"
-          value={loading ? '—' : '156'}
+          value={loading ? '—' : String(totalStores)}
           icon={<Store className="h-5 w-5" />}
-          trend={{ value: 12, isPositive: true }}
-          description="vs. mês anterior"
+          description="lojas cadastradas"
         />
         <StatCard
-          title="Usuários Ativos"
-          value={loading ? '—' : '2.340'}
+          title="Usuários Cadastrados"
+          value={loading ? '—' : String(totalUsers)}
           icon={<Users className="h-5 w-5" />}
-          trend={{ value: 8, isPositive: true }}
-          description="vs. mês anterior"
+          description="na plataforma"
         />
         <StatCard
-          title="Pedidos (Mês)"
-          value={loading ? '—' : '45.200'}
+          title="Total de Pedidos"
+          value={loading ? '—' : String(totalOrders)}
           icon={<ShoppingBag className="h-5 w-5" />}
-          trend={{ value: 23, isPositive: true }}
-          description="vs. mês anterior"
+          description="pedidos registrados"
         />
         <StatCard
           title="Volume Transacionado"
-          value={loading ? '—' : 'Kz 12.5M'}
+          value={loading ? '—' : formatCurrency(totalRevenue)}
           icon={<DollarSign className="h-5 w-5" />}
-          trend={{ value: 15, isPositive: true }}
-          description="vs. mês anterior"
+          description="receita total"
         />
       </div>
 
@@ -81,32 +139,42 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Activity className="h-5 w-5 text-primary" />
-              Atividade Recente
+              Pedidos Recentes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: 'Nova loja registrada', target: 'Tech Zone Angola', time: '5 min' },
-                { action: 'Pedido concluído', target: '#ORD-4523', time: '12 min' },
-                { action: 'Novo vendedor aprovado', target: 'Maria Silva', time: '30 min' },
-                { action: 'Pagamento processado', target: 'Kz 45.000', time: '1 hora' },
-                { action: 'Review moderada', target: 'Produto #892', time: '2 horas' },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 border-b border-border pb-3 text-sm last:border-0 last:pb-0"
-                >
-                  <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                  <span className="font-medium text-foreground">{item.action}:</span>
-                  <span className="text-muted-foreground">{item.target}</span>
-                  <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {item.time}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <EmptyState title="Nenhum pedido" description="Ainda não há pedidos registrados." />
+            ) : (
+              <div className="space-y-4">
+                {recentOrders.map((order: any, i: number) => (
+                  <div
+                    key={order.id || i}
+                    className="flex items-center gap-3 border-b border-border pb-3 text-sm last:border-0 last:pb-0"
+                  >
+                    <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                    <span className="font-medium text-foreground">
+                      Pedido #{order.id?.slice(-6) ?? '—'}
+                    </span>
+                    <Badge variant={order.status === 'DELIVERED' ? 'success' : order.status === 'CANCELLED' ? 'destructive' : 'warning'}>
+                      {order.status}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {order.user?.fullName ?? 'Anônimo'}
+                    </span>
+                    <span className="ml-auto font-medium text-foreground">
+                      {formatCurrency(order.totalAmount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -115,38 +183,52 @@ export default function AdminDashboard() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Store className="h-5 w-5 text-primary" />
               Lojas Pendentes de Aprovação
-              <Badge variant="warning" className="ml-2">3</Badge>
+              <Badge variant="warning" className="ml-2">
+                {loading ? '—' : pendingStores.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { name: 'Moda Luanda', category: 'Moda', date: 'Há 2 dias' },
-                { name: 'Tech Express AO', category: 'Eletrônicos', date: 'Há 3 dias' },
-                { name: 'Sabores de Angola', category: 'Alimentação', date: 'Há 5 dias' },
-              ].map((store, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
-                      {store.name[0]}
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : pendingStores.length === 0 ? (
+              <EmptyState title="Nenhuma pendência" description="Todas as lojas foram aprovadas." />
+            ) : (
+              <div className="space-y-3">
+                {pendingStores.slice(0, 5).map((store: any, i: number) => (
+                  <div
+                    key={store.id || i}
+                    className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
+                        {store.name?.[0] ?? '?'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{store.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {store.category?.name ?? 'Sem categoria'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{store.name}</p>
-                      <p className="text-xs text-muted-foreground">{store.category}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {store.createdAt
+                          ? new Date(store.createdAt).toLocaleDateString('pt-BR')
+                          : '—'}
+                      </span>
+                      <button className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                        Revisar
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{store.date}</span>
-                    <button className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-                      Revisar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -155,52 +237,35 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Taxa de Conversão</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-3">
-              <span className="text-4xl font-bold text-foreground">3.2%</span>
-              <span className="mb-1 flex items-center text-sm text-success">
-                <TrendingUp className="mr-1 h-4 w-4" />
-                +0.5%
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Média de conversão do marketplace
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
             <CardTitle className="text-lg">Ticket Médio</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-3">
-              <span className="text-4xl font-bold text-foreground">Kz 8.500</span>
-              <span className="mb-1 flex items-center text-sm text-success">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                +12%
+              <span className="text-4xl font-bold text-foreground">
+                {loading ? '—' : formatCurrency(avgOrderValue)}
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Valor médio por pedido este mês
+              Valor médio por pedido
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Satisfação</CardTitle>
+            <CardTitle className="text-lg">Avaliação Média</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-3">
-              <span className="text-4xl font-bold text-foreground">4.6</span>
+              <span className="text-4xl font-bold text-foreground">
+                {loading ? '—' : avgRating}
+              </span>
               <span className="mb-1 text-sm text-muted-foreground">/ 5.0</span>
             </div>
             <div className="mt-2 flex gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <svg
                   key={star}
-                  className={`h-4 w-4 ${star <= 4 ? 'text-warning' : 'text-muted'}`}
+                  className={`h-4 w-4 ${star <= Math.round(Number(avgRating)) ? 'text-warning' : 'text-muted'}`}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -209,7 +274,25 @@ export default function AdminDashboard() {
               ))}
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              NPS baseado em 1.250 avaliações
+              Baseado em {loading ? '—' : totalReviews} avaliações
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Lojas Verificadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-3">
+              <span className="text-4xl font-bold text-foreground">
+                {loading ? '—' : stores.filter((s: any) => s.isVerified).length}
+              </span>
+              <span className="mb-1 text-sm text-muted-foreground">
+                / {totalStores}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {loading ? '—' : pendingStores.length} aguardando verificação
             </p>
           </CardContent>
         </Card>

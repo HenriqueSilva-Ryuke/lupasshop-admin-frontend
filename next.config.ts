@@ -4,14 +4,8 @@ const nextConfig: NextConfig = {
   // Enable React Compiler
   reactCompiler: true,
 
-  // =============================================
-  // MULTI-ZONE: This app is the admin zone
-  // All routes are served under /admin basePath
-  // =============================================
-  basePath: "/admin",
-
   // Transpile the shared design system
-  transpilePackages: ["@lupa/design-system"],
+  transpilePackages: ["@lupa/design-system", "@lupa/api-client", "@lupa/types"],
 
   // Images
   images: {
