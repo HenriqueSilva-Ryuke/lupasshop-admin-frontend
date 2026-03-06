@@ -23,13 +23,17 @@ import {
 import { cn, formatDate } from '@lupa/design-system/utils';
 
 const LIST_USERS = gql`
-  query ListUsers($role: UserRole, $limit: Int, $offset: Int) {
-    listUsers(role: $role, limit: $limit, offset: $offset) {
-      id
-      email
-      fullName
-      role
-      createdAt
+  query GetAllUsers($role: Role, $search: String, $limit: Int, $offset: Int) {
+    getAllUsers(role: $role, search: $search, limit: $limit, offset: $offset) {
+      users {
+        id
+        email
+        fullName
+        role
+        createdAt
+      }
+      total
+      hasMore
     }
   }
 `;
@@ -47,18 +51,15 @@ export default function AdminUsersPage() {
   const { data, loading } = useQuery<any>(LIST_USERS, {
     variables: {
       role: roleFilter || undefined,
+      search: search || undefined,
       limit: 50,
       offset: 0,
     },
     errorPolicy: 'ignore',
   });
 
-  const users = data?.listUsers || [];
-  const filteredUsers = users.filter(
-    (u: any) =>
-      u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const users = data?.getAllUsers?.users || [];
+  const filteredUsers = users;
 
   return (
     <div className="space-y-6">
