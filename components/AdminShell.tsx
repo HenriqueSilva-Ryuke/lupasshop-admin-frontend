@@ -1,7 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import {
   LayoutDashboard,
   Store,
@@ -11,6 +13,7 @@ import {
   LogOut,
   Bell,
   Menu,
+  ClipboardList,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -21,20 +24,49 @@ import {
 } from '@lupa/design-system';
 import type { SidebarItem } from '@lupa/design-system';
 import { useSidebar } from '@lupa/design-system';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { resetApiClient } from '@lupa/api-client/client';
 
-const adminNavItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-  { icon: Store, label: 'Lojas & Aprovação', href: '/stores', badge: 3 },
-  { icon: Users, label: 'Usuários', href: '/users' },
-  { icon: DollarSign, label: 'Financeiro', href: '/finances' },
-  { icon: Settings, label: 'Configurações', href: '/settings' },
-];
+const GET_PENDING_COUNT = gql`
+  query GetPendingCount {
+    getPendingStores(limit: 1) {
+      id
+    }
+    getPlatformStats
+  }
+`;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAdminAuth();
   const { collapsed, toggle } = useSidebar();
 
-  // Strip basePath for matching
+  const { data } = useQuery<any>(GET_PENDING_COUNT, {
+    errorPolicy: 'ignore',
+    pollInterval: 60000,
+  });
+
+  const pendingCount: number = data?.getPlatformStats?.pendingApprovals ?? 0;
+
+  const handleLogout = () => {
+    logout();
+    try { resetApiClient(); } catch { /* ignore */ }
+    router.replace('/login');
+  };
+
+  const adminNavItems: SidebarItem[] = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+    { icon: Store, label: 'Lojas & Aprovação', href: '/stores', badge: pendingCount || undefined },
+    { icon: Users, label: 'Utilizadores', href: '/users' },
+    { icon: DollarSign, label: 'Financeiro', href: '/finances' },
+    { icon: ClipboardList, label: 'Auditoria', href: '/audit' },
+    { icon: Settings, label: 'Configurações', href: '/settings' },
+  ];
+
+  // Login page renders without shell
+  if (pathname === '/login') return <>{children}</>;
+
   const currentPath = pathname.replace('/admin', '') || '/';
 
   const sidebar = (
@@ -47,13 +79,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       collapsed={collapsed}
       onToggle={toggle}
       footer={
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        >
           <LogOut className="h-5 w-5" />
           Sair
         </button>
       }
     />
   );
+
+  const initials = user?.fullName
+    ? user.fullName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
+    : 'AD';
 
   const header = (
     <div className="flex w-full items-center justify-between">
@@ -68,16 +107,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="relative rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+        <Link
+          href="/audit"
+          className="relative rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          title="Auditoria"
+        >
           <Bell className="h-5 w-5" />
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-            2
-          </span>
-        </button>
+          {pendingCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              {pendingCount > 9 ? '9+' : pendingCount}
+            </span>
+          )}
+        </Link>
         <div className="flex items-center gap-2">
-          <Avatar fallback="AD" size="sm" />
+          <Avatar fallback={initials} size="sm" />
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-foreground">Admin</p>
+            <p className="text-sm font-medium text-foreground">
+              {user?.fullName || 'Admin'}
+            </p>
             <Badge variant="outline" className="text-[10px]">Super Admin</Badge>
           </div>
         </div>

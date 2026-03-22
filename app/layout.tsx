@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ApolloWrapper } from "@/components/ApolloWrapper";
 import { AdminShell } from "@/components/AdminShell";
+import { AuthGuard } from "@/components/AuthGuard";
 
 export const metadata: Metadata = {
   title: "LupaShop Admin — Backoffice",
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="pt">
       <body className="bg-background text-foreground antialiased">
         <ApolloWrapper>
-          <AdminShell>{children}</AdminShell>
+          <AuthGuard>
+            <AdminShell>{children}</AdminShell>
+          </AuthGuard>
         </ApolloWrapper>
       </body>
     </html>
