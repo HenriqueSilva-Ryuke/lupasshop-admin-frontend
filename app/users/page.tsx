@@ -12,8 +12,8 @@ import {
   PageHeader, Card, CardContent, Badge, Button,
   EmptyState, Avatar, StatCard,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from '@lupa/design-system';
-import { formatDate } from '@lupa/design-system/utils';
+} from 'lupa-design-system';
+import { formatDate } from 'lupa-design-system/utils';
 
 const LIST_USERS = gql`
   query GetAllUsers($role: Role, $search: String, $limit: Int, $offset: Int) {

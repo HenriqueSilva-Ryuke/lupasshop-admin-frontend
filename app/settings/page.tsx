@@ -8,7 +8,7 @@ import { Save, Globe, Shield, Bell, CreditCard, Loader2 } from 'lucide-react';
 import {
   PageHeader, Card, CardHeader, CardTitle, CardDescription,
   CardContent, CardFooter, Button, Input, Textarea, Badge,
-} from '@lupa/design-system';
+} from 'lupa-design-system';
 
 const GET_SETTINGS = gql`
   query GetPlatformSettings {

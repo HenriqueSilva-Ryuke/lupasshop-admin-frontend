@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",
-    "@lupa/api-client": "workspace:*",
-    "@lupa/design-system": "workspace:*",
-    "@lupa/types": "workspace:*",
+    "lupa-api-client": "^0.1.0",
+    "lupa-design-system": "^1.0.0",
+    "lupa-types": "^0.1.0",
     "@tanstack/react-query": "^5.90.6",
     "clsx": "^2.1.1",
     "graphql": "^16.12.0",

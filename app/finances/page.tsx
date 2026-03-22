@@ -6,8 +6,8 @@ import { DollarSign, TrendingUp, ArrowUpRight, Wallet, Download, Play, CheckChec
 import { toast } from 'sonner';
 import {
   PageHeader, StatCard, Card, CardHeader, CardTitle, CardContent, Badge, Skeleton, EmptyState, Button,
-} from '@lupa/design-system';
-import { formatCurrency } from '@lupa/design-system/utils';
+} from 'lupa-design-system';
+import { formatCurrency } from 'lupa-design-system/utils';
 
 const ADMIN_FINANCIAL_QUERY = gql`
   query AdminFinancial {

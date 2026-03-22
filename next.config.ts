@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 
   // Transpile the shared design system
-  transpilePackages: ["@lupa/design-system", "@lupa/api-client", "@lupa/types"],
+  transpilePackages: ["lupa-design-system", "lupa-api-client", "lupa-types"],
 
   // Images
   images: {

@@ -1,7 +1,7 @@
 @import "tailwindcss";
-@import "@lupa/design-system/styles";
+@import "lupa-design-system/styles";
 
 /* ==========================================================================
    ADMIN-BACKOFFICE — Extends shared design system
-   Inherits all tokens from @lupa/design-system for unified look-and-feel.
+   Inherits all tokens from lupa-design-system for unified look-and-feel.
    ========================================================================== */

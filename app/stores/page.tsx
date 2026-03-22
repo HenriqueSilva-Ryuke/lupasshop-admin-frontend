@@ -12,7 +12,7 @@ import {
   PageHeader, Card, CardContent, CardHeader, CardTitle,
   Badge, Button, EmptyState,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Avatar,
-} from '@lupa/design-system';
+} from 'lupa-design-system';
 
 const GET_PENDING_STORES = gql`
   query GetPendingStores {

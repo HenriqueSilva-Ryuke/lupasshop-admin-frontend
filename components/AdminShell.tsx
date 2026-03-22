@@ -21,11 +21,11 @@ import {
   Logo,
   Avatar,
   Badge,
-} from '@lupa/design-system';
-import type { SidebarItem } from '@lupa/design-system';
-import { useSidebar } from '@lupa/design-system';
+} from 'lupa-design-system';
+import type { SidebarItem } from 'lupa-design-system';
+import { useSidebar } from 'lupa-design-system';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { resetApiClient } from '@lupa/api-client/client';
+import { resetApiClient } from 'lupa-api-client/client';
 
 const GET_PENDING_COUNT = gql`
   query GetPendingCount {

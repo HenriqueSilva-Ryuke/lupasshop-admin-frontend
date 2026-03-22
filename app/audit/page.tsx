@@ -7,7 +7,7 @@ import { ClipboardList, Search, RefreshCw, Loader2 } from 'lucide-react';
 import {
   PageHeader, Card, CardContent, Badge, EmptyState,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from '@lupa/design-system';
+} from 'lupa-design-system';
 
 const GET_AUDIT_LOGS = gql`
   query GetAuditLogs($limit: Int, $offset: Int, $action: String, $entityType: String) {

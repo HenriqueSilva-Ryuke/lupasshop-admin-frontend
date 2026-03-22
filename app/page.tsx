@@ -22,8 +22,8 @@ import {
   Badge,
   Skeleton,
   EmptyState,
-} from '@lupa/design-system';
-import { formatCurrency } from '@lupa/design-system/utils';
+} from 'lupa-design-system';
+import { formatCurrency } from 'lupa-design-system/utils';
 
 // Real GraphQL queries to the backend
 const ADMIN_DASHBOARD_QUERY = gql`
